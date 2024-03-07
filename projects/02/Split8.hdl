@@ -1,0 +1,22 @@
+CHIP Split8 {
+  IN in[16];
+  OUT out1[8], out2[8];
+
+ PARTS:
+ Or(a = in[0], b = false, out = out1[0]);
+ Or(a = in[1], b = false, out = out1[1]);
+ Or(a = in[2], b = false, out = out1[2]);
+ Or(a = in[3], b = false, out = out1[3]);
+ Or(a = in[4], b = false, out = out1[4]);
+ Or(a = in[5], b = false, out = out1[5]);
+ Or(a = in[6], b = false, out = out1[6]);
+ Or(a = in[7], b = false, out = out1[7]);
+ Or(a = in[8], b = false, out = out2[0]);
+ Or(a = in[9], b = false, out = out2[1]);
+ Or(a = in[10], b = false, out = out2[2]);
+ Or(a = in[11], b = false, out = out2[3]);
+ Or(a = in[12], b = false, out = out2[4]);
+ Or(a = in[13], b = false, out = out2[5]);
+ Or(a = in[14], b = false, out = out2[6]);
+ Or(a = in[15], b = false, out = out2[7]);
+}
