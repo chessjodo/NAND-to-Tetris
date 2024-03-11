@@ -83,6 +83,7 @@ def return_value(text):
 
 
 def assembler():
+    output = open("translation.hack", "w")
     line_count = -1
     while line := stdin.readline():
         line_count += 1
@@ -96,14 +97,17 @@ def assembler():
         if matched := re.match("@.{1,3}", line):
             translation = return_value(line)
             print(translation)
+            output.writelines(translation + "\n")
         elif matched := re.match("(.*)=(.*)(;(.*))?", line):
             dest = DEST[matched.group(1)]
             comp = COMP[matched.group(2)]
             jump = JUMP[matched.group(4)]
             combination = f"111{comp}{dest}{jump}"
             print(combination)
+            output.writelines(combination + "\n")
         else:
             print(line)
+    output.close()
 
 
 if __name__ == "__main__":
