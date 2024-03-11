@@ -28,7 +28,7 @@ COMP = {
     "-1": "0111010",
     "D": "0001100",
     "A": "0110000",
-    "M": "10110000",
+    "M": "1110000",
     "!D": "0001101",
     "!A": "0110001",
     "!M": "1110001",
@@ -73,35 +73,36 @@ def return_value(text):
         try:
             return f"0{int(LABEL_DICT[text[1:]]):015b}"
         except:
-            if re.match("R([0-1]?[0-9])", text):
-                return f"0{int(text[1:]):015b}"
+            if matched := re.search("R(1[0-5]|[0-9])", text):
+                return f"0{int(matched.group(1)):015b}"
             else:
                 try:
                     return f"0{int(SYMBOLS[text[1:]]):015b}"
                 except:
-                    return "Symbol not Found"
+                    return text + "   Symbol not Found"
 
 
 def assembler():
     output = open("translation.hack", "w")
+    input_file = open("input.txt", "r")
     line_count = -1
-    while line := stdin.readline():
+    while line := input_file.readline():
         line_count += 1
-        line = line[:-2]
-        if line == "" or line[0:2] == "//":
-            continue
-        elif matched := re.match("\((.*)\)", line):
-            LABEL_DICT[matched.group(1)] = line_count + 1
-            line_count -= 1
-            continue
-        if matched := re.match("@.{1,3}", line):
-            translation = return_value(line)
+        DESTKEYS = [key for key in DEST.keys() if key != None]
+        JUMPKEYS = [key for key in JUMP.keys() if key != None]
+        if matched := re.search("@.*", line):
+            translation = return_value(line[matched.start() : matched.end()])
             print(translation)
             output.writelines(translation + "\n")
-        elif matched := re.match("(.*)=(.*)(;(.*))?", line):
+        elif matched := re.search(
+            "({})?(=?({}))(;({}))?".format(
+                "|".join(DESTKEYS), "|".join(COMP), "|".join(JUMPKEYS)
+            ),
+            line,
+        ):
             dest = DEST[matched.group(1)]
-            comp = COMP[matched.group(2)]
-            jump = JUMP[matched.group(4)]
+            comp = COMP[matched.group(3)]
+            jump = JUMP[matched.group(5)]
             combination = f"111{comp}{dest}{jump}"
             print(combination)
             output.writelines(combination + "\n")
@@ -110,6 +111,27 @@ def assembler():
     output.close()
 
 
+def add_labels():
+    input_file = open("input.txt", "w")
+    line_count = -1
+    while line := stdin.readline():
+        line_count += 1
+        line = line[:-2]
+        if line == "" or line[0:2] == "//":
+            line_count -= 1
+            continue
+        if matched := re.search("//.*", line):
+            line = line[: matched.start()]
+        if matched := re.search("\((.*)\)", line):
+            LABEL_DICT[matched.group(1)] = line_count + 1
+            line_count -= 1
+            continue
+        else:
+            input_file.writelines(line + "\n")
+
+
 if __name__ == "__main__":
     print("Running Assembler")
+    add_labels()
+    print("LABELS: ", LABEL_DICT)
     assembler()
