@@ -26,9 +26,6 @@ COMP = {
     "0": "0101010",
     "1": "0111111",
     "-1": "0111010",
-    "D": "0001100",
-    "A": "0110000",
-    "M": "1110000",
     "!D": "0001101",
     "!A": "0110001",
     "!M": "1110001",
@@ -51,6 +48,9 @@ COMP = {
     "D&M": "1000000",
     "D|A": "0010101",
     "D|M": "1010101",
+    "D": "0001100",
+    "A": "0110000",
+    "M": "1110000",
 }
 
 SYMBOLS = {
@@ -65,6 +65,12 @@ SYMBOLS = {
 
 LABEL_DICT = {}
 
+DESTKEYS = [key for key in DEST.keys() if key != None]
+JUMPKEYS = [key for key in JUMP.keys() if key != None]
+COMPKEYS = [
+    key for key in COMP.keys() if key != "A" and key != "D" and key != "M"
+]
+
 
 def return_value(text):
     try:
@@ -76,9 +82,11 @@ def return_value(text):
             if matched := re.search("R(1[0-5]|[0-9])", text):
                 return f"0{int(matched.group(1)):015b}"
             else:
-                try:
-                    return f"0{int(SYMBOLS[text[1:]]):015b}"
-                except:
+                if matched := re.search(
+                    "({})".format("|".join(SYMBOLS.keys())), text
+                ):
+                    return f"0{int(SYMBOLS[matched.group(1)]):015b}"
+                else:
                     return text + "   Symbol not Found"
 
 
@@ -88,26 +96,28 @@ def assembler():
     line_count = -1
     while line := input_file.readline():
         line_count += 1
-        DESTKEYS = [key for key in DEST.keys() if key != None]
-        JUMPKEYS = [key for key in JUMP.keys() if key != None]
-        if matched := re.search("@.*", line):
+
+        # print("COMPKEYS: ", COMPKEYS)
+        if matched := re.search("@[^\s^X^ ]*", line):
+            # print("XXX" + line[matched.start() : matched.end()] + "XXX")
             translation = return_value(line[matched.start() : matched.end()])
-            print(translation)
+            # print("TRANSLATION: ", translation)
             output.writelines(translation + "\n")
         elif matched := re.search(
             "({})?(=?({}))(;({}))?".format(
-                "|".join(DESTKEYS), "|".join(COMP), "|".join(JUMPKEYS)
+                "|".join(DESTKEYS), "|".join(COMPKEYS), "|".join(JUMPKEYS)
             ),
             line,
         ):
+            # print("GROUPS: ", matched.groups())
             dest = DEST[matched.group(1)]
             comp = COMP[matched.group(3)]
             jump = JUMP[matched.group(5)]
             combination = f"111{comp}{dest}{jump}"
-            print(combination)
+            # print("COMBINATION ", combination)
             output.writelines(combination + "\n")
         else:
-            print(line)
+            print("No Output: ", line)
     output.close()
 
 
@@ -123,11 +133,11 @@ def add_labels():
         if matched := re.search("//.*", line):
             line = line[: matched.start()]
         if matched := re.search("\((.*)\)", line):
-            LABEL_DICT[matched.group(1)] = line_count + 1
+            LABEL_DICT[matched.group(1)] = line_count
             line_count -= 1
             continue
         else:
-            input_file.writelines(line + "\n")
+            input_file.writelines(line + "XX\n")
 
 
 if __name__ == "__main__":
