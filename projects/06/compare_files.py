@@ -3,16 +3,32 @@ import sys
 
 
 def compare_files(file1, file2):
-    with open(file1, "r") as file1_file:
-        file1_content = file1_file.read()
-
-    with open(file2, "r") as file2_file:
-        file2_content = file2_file.read()
-
-    if file1_content == file2_content:
-        print("Match successful")
-    else:
-        print("Match unsuccessful")
+    new_file = file2.replace(".hack", ".asm")
+    with open(new_file, "r") as asm_file:
+        with open(file1, "r") as file1_file:
+            with open(file2, "r") as file2_file:
+                count = 0
+                line_count = 0
+                while (f1 := file1_file.readline()) and (
+                    f2 := file2_file.readline()
+                ):
+                    asm_line = asm_file.readline()
+                    line_count += 1
+                    if count == 5:
+                        return
+                    while asm_line[0] == "(":
+                        asm_line = asm_file.readline()
+                    if f1 != f2:
+                        print(
+                            "Match unsuccessful at lines: F1: ",
+                            f1,
+                            " F2: ",
+                            f2,
+                            end="",
+                        )
+                        print("ASM: ", asm_line, line_count)
+                        count += 1
+                print("Match successful!")
 
 
 if __name__ == "__main__":
