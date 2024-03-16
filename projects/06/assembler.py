@@ -154,26 +154,22 @@ def translate_instruction(line):
 def assembler():
     """
     assembler(): Function that coordinates the translation from assembly to
-    binary codes. It reads an input file and writes to an output file.
+    binary codes. It reads an input file and prints the output.
     For every line in the input it matches it to a value using the return_value
     function, and if that is not successful an instruction using the
     translate_instruction function. The returned values from these functions is
-    written to the output file.
+    printed.
     """
-    output = open("translation.hack", "w")
     input_file = open("input.txt", "r")
     while line := input_file.readline():
         line = line.replace(" ", "")
         if matched := re.match("@[^\s^X^ ]*XX", line):
             translation = return_value(line[matched.start() : matched.end()])
-            output.writelines(translation + "\n")
             print(translation)
         elif combination := translate_instruction(line):
-            output.writelines(combination + "\n")
             print(combination)
         else:
             print("The entered text is not in the asked format")
-    output.close()
     input_file.close()
 
 
