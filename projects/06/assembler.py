@@ -80,25 +80,25 @@ LABELKEYS = []
 
 def return_value(text):
     try:
-        return f"0{int(text[1:]):015b}"
+        return f"0{int(text[1:-2]):015b}"
     except:
-        # print("TEXT: ", text)
-        if matched := re.search("({})".format("|".join(LABELKEYS)), text):
+        print("TEXT: ", text)
+        if matched := re.search("({})XX".format("|".join(LABELKEYS)), text):
             # print("PrintLABEL DICT", LABEL_DICT, matched.groups())
             # print("RegEx Labelkeys: ", "({})".format("|".join(LABELKEYS)))
             return f"0{int(LABEL_DICT[matched.group(1)]):015b}"
         else:
-            if matched := re.search("R(1[0-5]|[0-9])", text):
+            if matched := re.search("R(1[0-5]|[0-9])XX", text):
                 return f"0{int(matched.group(1)):015b}"
             else:
                 if matched := re.search(
-                    "({})".format("|".join(SYMBOLS)), text
+                    "({})XX".format("|".join(SYMBOLS)), text
                 ):
                     return f"0{int(SYMBOLS[matched.group(1)]):015b}"
                 else:
-                    SYMBOLS[text] = f"{len(SYMBOLS)+9}"
+                    SYMBOLS[text[:-2]] = f"{len(SYMBOLS)+9}"
                     print(text + ":: New Symbol")
-                    return f"0{int(SYMBOLS[text]):015b}"
+                    return f"0{int(SYMBOLS[text[:-2]]):015b}"
 
 
 def update_labelkeys():
@@ -114,6 +114,22 @@ def update_labelkeys():
     # print(LABELKEYS)
 
 
+def translate_instruction(line):
+    if matched := re.match(
+        "(({})=)?({})(;({}))?XX".format(
+            "|".join(DESTKEYS), "|".join(COMPKEYS), "|".join(JUMPKEYS)
+        ),
+        line,
+    ):
+        # print("GROUPS: ", line, matched.groups())
+        dest = DEST[matched.group(2)]
+        comp = COMP[matched.group(3)]
+        jump = JUMP[matched.group(5)]
+        combination = f"111{comp}{dest}{jump}"
+        return combination
+    return False
+
+
 def assembler():
     """
     DOCSTRING
@@ -126,32 +142,17 @@ def assembler():
         line_count += 1
         line = line.replace(" ", "")
         # print("COMPKEYS: ", COMPKEYS)
-        if matched := re.match("@[^\s^X^ ]*", line):
+        if matched := re.match("@[^\s^X^ ]*XX", line):
             # print("XXX" + line[matched.start() : matched.end()] + "XXX")
             translation = return_value(line[matched.start() : matched.end()])
             # print("TRANSLATION: ", translation)
             output.writelines(translation + "\n")
-        elif matched := re.match(
-            "(({})=)?({})(;({}))?XX".format(
-                "|".join(DESTKEYS), "|".join(COMPKEYS), "|".join(JUMPKEYS)
-            ),
-            line,
-        ):
-            # print("GROUPS: ", line, matched.groups())
-            dest = DEST[matched.group(2)]
-            comp = COMP[matched.group(3)]
-            jump = JUMP[matched.group(5)]
-            combination = f"111{comp}{dest}{jump}"
-            # print("COMBINATION ", combination)
+        elif combination := translate_instruction(line):
             output.writelines(combination + "\n")
         else:
-            print(
-                "(({})=)?({})(;({}))?".format(
-                    "|".join(DESTKEYS), "|".join(COMP), "|".join(JUMPKEYS)
-                )
-            )
             print("No Output: ", line, ord(line[-4]), "Char -4", line[-4])
     output.close()
+    print(LABEL_DICT)
 
 
 def add_labels():
