@@ -7,6 +7,7 @@ DEST = {
     "M": "001",
     "D": "010",
     "DM": "011",
+    "MD": "011",
     "A": "100",
     "AM": "101",
     "AD": "110",
@@ -74,24 +75,43 @@ for key in COMP.keys():
         COMPKEYS.append(new_key)
     else:
         COMPKEYS.append(key)
+LABELKEYS = []
 
 
 def return_value(text):
     try:
         return f"0{int(text[1:]):015b}"
     except:
-        try:
-            return f"0{int(LABEL_DICT[text[1:]]):015b}"
-        except:
+        # print("TEXT: ", text)
+        if matched := re.search("({})".format("|".join(LABELKEYS)), text):
+            # print("PrintLABEL DICT", LABEL_DICT, matched.groups())
+            # print("RegEx Labelkeys: ", "({})".format("|".join(LABELKEYS)))
+            return f"0{int(LABEL_DICT[matched.group(1)]):015b}"
+        else:
             if matched := re.search("R(1[0-5]|[0-9])", text):
                 return f"0{int(matched.group(1)):015b}"
             else:
                 if matched := re.search(
-                    "({})".format("|".join(SYMBOLS.keys())), text
+                    "({})".format("|".join(SYMBOLS)), text
                 ):
                     return f"0{int(SYMBOLS[matched.group(1)]):015b}"
                 else:
-                    return text + "   Symbol not Found"
+                    SYMBOLS[text] = f"{len(SYMBOLS)+9}"
+                    print(text + ":: New Symbol")
+                    return f"0{int(SYMBOLS[text]):015b}"
+
+
+def update_labelkeys():
+    for key in LABEL_DICT.keys():
+        new_key = ""
+        for char in key:
+            if matched != re.match("[^a-zA-Z0-9]", char):
+                new_key += "\\" + char
+            else:
+                new_key += char
+            # print(new_key)
+        LABELKEYS.append(new_key)
+    # print(LABELKEYS)
 
 
 def assembler():
@@ -99,13 +119,12 @@ def assembler():
     DOCSTRING
 
     """
-
     output = open("translation.hack", "w")
     input_file = open("input.txt", "r")
     line_count = -1
     while line := input_file.readline():
         line_count += 1
-
+        line = line.replace(" ", "")
         # print("COMPKEYS: ", COMPKEYS)
         if matched := re.match("@[^\s^X^ ]*", line):
             # print("XXX" + line[matched.start() : matched.end()] + "XXX")
@@ -131,7 +150,7 @@ def assembler():
                     "|".join(DESTKEYS), "|".join(COMP), "|".join(JUMPKEYS)
                 )
             )
-            print("No Output: ", line)
+            print("No Output: ", line, ord(line[-4]), "Char -4", line[-4])
     output.close()
 
 
@@ -148,6 +167,8 @@ def add_labels():
             line = line[matched.end() :]
         if matched := re.search("\s*//.*", line):
             line = line[: matched.start()]
+        # if matched := re.search("\s*", line):
+        #   line = line[: matched.start()] + line[matched.end()]
         if matched := re.search("\((.*)\)", line):
             LABEL_DICT[matched.group(1)] = line_count
             line_count -= 1
@@ -159,5 +180,5 @@ def add_labels():
 if __name__ == "__main__":
     print("Running Assembler")
     add_labels()
-    print("LABELS: ", LABEL_DICT)
+    update_labelkeys()
     assembler()
