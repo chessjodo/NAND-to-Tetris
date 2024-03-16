@@ -67,9 +67,13 @@ LABEL_DICT = {}
 
 DESTKEYS = [key for key in DEST.keys() if key != None]
 JUMPKEYS = [key for key in JUMP.keys() if key != None]
-COMPKEYS = [
-    key for key in COMP.keys() if key != "A" and key != "D" and key != "M"
-]
+COMPKEYS = []
+for key in COMP.keys():
+    if matched := re.search("(\||\+|\-)", key):
+        new_key = key[: matched.start()] + "\\" + key[matched.start() :]
+        COMPKEYS.append(new_key)
+    else:
+        COMPKEYS.append(key)
 
 
 def return_value(text):
@@ -91,6 +95,11 @@ def return_value(text):
 
 
 def assembler():
+    """
+    DOCSTRING
+
+    """
+
     output = open("translation.hack", "w")
     input_file = open("input.txt", "r")
     line_count = -1
@@ -98,25 +107,30 @@ def assembler():
         line_count += 1
 
         # print("COMPKEYS: ", COMPKEYS)
-        if matched := re.search("@[^\s^X^ ]*", line):
+        if matched := re.match("@[^\s^X^ ]*", line):
             # print("XXX" + line[matched.start() : matched.end()] + "XXX")
             translation = return_value(line[matched.start() : matched.end()])
             # print("TRANSLATION: ", translation)
             output.writelines(translation + "\n")
-        elif matched := re.search(
-            "({})?(=?({}))(;({}))?".format(
+        elif matched := re.match(
+            "(({})=)?({})(;({}))?XX".format(
                 "|".join(DESTKEYS), "|".join(COMPKEYS), "|".join(JUMPKEYS)
             ),
             line,
         ):
-            # print("GROUPS: ", matched.groups())
-            dest = DEST[matched.group(1)]
+            # print("GROUPS: ", line, matched.groups())
+            dest = DEST[matched.group(2)]
             comp = COMP[matched.group(3)]
             jump = JUMP[matched.group(5)]
             combination = f"111{comp}{dest}{jump}"
             # print("COMBINATION ", combination)
             output.writelines(combination + "\n")
         else:
+            print(
+                "(({})=)?({})(;({}))?".format(
+                    "|".join(DESTKEYS), "|".join(COMP), "|".join(JUMPKEYS)
+                )
+            )
             print("No Output: ", line)
     output.close()
 
@@ -130,7 +144,9 @@ def add_labels():
         if line == "" or line[0:2] == "//":
             line_count -= 1
             continue
-        if matched := re.search("//.*", line):
+        if matched := re.match("\s*", line):
+            line = line[matched.end() :]
+        if matched := re.search("\s*//.*", line):
             line = line[: matched.start()]
         if matched := re.search("\((.*)\)", line):
             LABEL_DICT[matched.group(1)] = line_count
