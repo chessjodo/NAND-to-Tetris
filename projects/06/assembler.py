@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import re
 from sys import stdin
 
@@ -166,8 +167,10 @@ def assembler():
         if matched := re.match("@[^\s^X^ ]*XX", line):
             translation = return_value(line[matched.start() : matched.end()])
             output.writelines(translation + "\n")
+            print(translation)
         elif combination := translate_instruction(line):
             output.writelines(combination + "\n")
+            print(combination)
         else:
             print("The entered text is not in the asked format")
     output.close()
@@ -223,13 +226,15 @@ def full_assembly():
     are available with included escape characters
     to be added to regular expressions.
 
-    Lastly, the assembler function is called to do the translation of the input.
+    The assembler function is then called to do the translation of the input.
+
+    Lastly the input file is deleted.
     """
     add_labels()
     update_labelkeys()
     assembler()
+    os.remove("input.txt")
 
 
 if __name__ == "__main__":
-    print("Running Assembler")
     full_assembly()
